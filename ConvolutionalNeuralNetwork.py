@@ -66,7 +66,7 @@ while os.path.isfile(f"Character{image_number}.png"):
         img = cv2.imread(f"Character{image_number}.png")[:,:,0]
         img = cv2.resize(img, (28, 28), interpolation=cv2.INTER_AREA)
         img = np.invert(img)
-        img = img.reshape(1, 28, 28, 1)   # batch, height, width, channels
+        img = img.reshape(1, 28, 28, 1)   # batch = 1 for one image, height, width, channels
         prediction = model.predict(img)
         plt.imshow(img[0], cmap = plt.cm.binary)
         plt.show()
@@ -81,12 +81,12 @@ while os.path.isfile(f"Character{image_number}.png"):
 
 # Edge Case Testing
 image_number = 0
-while os.path.isfile(f"Character{image_number}.png"):
+while os.path.isfile(f"Character_{image_number}.png"):
     try:
-        img = cv2.imread(f"Character{image_number}.png")[:,:,0]
+        img = cv2.imread(f"Character_{image_number}.png")[:,:,0]
         img = cv2.resize(img, (28, 28), interpolation=cv2.INTER_AREA)
         img = np.invert(img)
-        img = img.reshape(1, 28, 28, 1)   # batch, height, width, channels
+        img = img.reshape(1, 28, 28, 1)   # batch = 1 for one image, height, width, channels
         prediction = model.predict(img)
         plt.imshow(img[0], cmap = plt.cm.binary)
         plt.show()
