@@ -80,17 +80,32 @@ while os.path.isfile(f"Character{image_number}.png"):
     finally: image_number += 1
 
 # Edge Case Testing
-image_number = 0
+image_number = 1
+
+emnist_map = [
+    '0','1','2','3','4','5','6','7','8','9',
+    'A','B','C','D','E','F','G','H','I','J',
+    'K','L','M','N','O','P','Q','R','S','T',
+    'U','V','W','X','Y','Z',
+    'a','b','d','e','f','g','h','n','q','r','t'
+]
+
 while os.path.isfile(f"Character_{image_number}.png"):
     try:
         img = cv2.imread(f"Character_{image_number}.png")[:,:,0]
         img = cv2.resize(img, (28, 28), interpolation=cv2.INTER_AREA)
         img = np.invert(img)
         img = img.reshape(1, 28, 28, 1)   # batch = 1 for one image, height, width, channels
+
         prediction = model.predict(img)
+        class_index = np.argmax(prediction)
+        predicted_char = emnist_map[class_index]
+
         plt.imshow(img[0], cmap = plt.cm.binary)
         plt.show()
-        print(f"The character is probably: {np.argmax(prediction)}")
+
+        print(f"The character is probably: {predicted_char}")
+
     except FileNotFoundError:
         print("File wasn't found")
     except IndexError:

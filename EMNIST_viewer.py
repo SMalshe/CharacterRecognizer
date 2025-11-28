@@ -29,12 +29,10 @@ y_train = load_labels("gzip/emnist-balanced-train-labels-idx1-ubyte.gz")
 # Display Images
 
 plt.figure(figsize=(8, 8))
-
 for i in range(12):
     plt.subplot(3, 4, i + 1)
     plt.imshow(x_train[i], cmap="gray")
     plt.title(f"Label: {y_train[i]}")
     plt.axis("off")
-
 plt.tight_layout()
 plt.show()
