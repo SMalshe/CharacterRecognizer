@@ -3,25 +3,22 @@ import numpy as np
 import streamlit as st
 from PIL import Image, ImageOps
 from streamlit_drawable_canvas import st_canvas
+import tflite_runtime.interpreter as tflite   # TFLITE ONLY
 
-# ============================================================================
-# ENV DETECTION — BULLETPROOF
-# ============================================================================
 
-def running_in_streamlit():
-    """True if running on Streamlit Cloud."""
-    return (
-        "STREAMLIT_SERVER_URL" in os.environ or
-        "STREAMLIT_SHARE" in os.environ or
-        os.environ.get("HOME", "").startswith("/home/adminuser")
-    )
+# =============================================================================
+# MODEL LOADING (TFLITE ONLY)
+# =============================================================================
+@st.cache_resource
+def load_model():
+    interpreter = tflite.Interpreter(model_path="handwritten_characters.tflite")
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    return interpreter, input_details, output_details
 
-RUNNING_IN_STREAMLIT_CLOUD = running_in_streamlit()
 
-if RUNNING_IN_STREAMLIT_CLOUD:
-    import tflite_runtime.interpreter as tflite
-else:
-    import tensorflow as tf
+interpreter, input_details, output_details = load_model()
 
 
 # =============================================================================
@@ -35,32 +32,14 @@ emnist_map = [
     'a','b','d','e','f','g','h','n','q','r','t'
 ]
 
-# =============================================================================
-# MODEL LOADING
-# =============================================================================
-@st.cache_resource
-def load_model():
-    if RUNNING_IN_STREAMLIT_CLOUD:
-        interpreter = tflite.Interpreter(model_path="handwritten_characters.tflite")
-        interpreter.allocate_tensors()
-        return interpreter, interpreter.get_input_details(), interpreter.get_output_details()
-    else:
-        model = tf.keras.models.load_model("handwritten_characters.keras")
-        return model, None, None
-
-model, input_details, output_details = load_model()
-
 
 # =============================================================================
-# PREDICT FUNCTION
+# PREDICT FUNCTION (TFLITE ONLY)
 # =============================================================================
 def predict(img):
-    if RUNNING_IN_STREAMLIT_CLOUD:
-        model.set_tensor(input_details[0]["index"], img)
-        model.invoke()
-        return model.get_tensor(output_details[0]["index"])
-    else:
-        return model.predict(img)
+    interpreter.set_tensor(input_details[0]["index"], img)
+    interpreter.invoke()
+    return interpreter.get_tensor(output_details[0]["index"])
 
 
 # =============================================================================
@@ -75,20 +54,20 @@ def preprocess(img):
     coords = np.column_stack(np.where(mask))
 
     if coords.size == 0:
-        blank = np.zeros((28, 28, 1), dtype=np.float32)
-        return blank.reshape(1, 28, 28, 1)
+        blank = np.zeros((28,28,1), dtype=np.float32)
+        return blank.reshape(1,28,28,1)
 
     y0, x0 = coords.min(axis=0)
     y1, x1 = coords.max(axis=0)
 
     cropped = arr[y0:y1+1, x0:x1+1]
-    cropped = Image.fromarray(cropped).resize((20, 20))
+    cropped = Image.fromarray(cropped).resize((20,20))
 
-    canvas = Image.new("L", (28, 28), 0)
-    canvas.paste(cropped, (4, 4))
+    canvas = Image.new("L", (28,28), 0)
+    canvas.paste(cropped, (4,4))
 
-    processed = np.array(canvas).astype(np.float32) / 255.0
-    return processed.reshape(1, 28, 28, 1)
+    arr = np.array(canvas).astype(np.float32) / 255.0
+    return arr.reshape(1, 28, 28, 1)
 
 
 # =============================================================================
@@ -102,7 +81,7 @@ st.session_state.setdefault("awaiting_correction", False)
 # =============================================================================
 # UI
 # =============================================================================
-st.title("✏️ Handwritten Character Recognizer")
+st.title("✏️ Handwritten Character Recognizer (TFLite Only)")
 st.write("Draw a character and let the model guess it!")
 
 st.subheader("Draw Here:")
@@ -114,11 +93,11 @@ canvas = st_canvas(
     width=280,
     height=280,
     drawing_mode="freedraw",
-    key="canvas_main"
+    key="canvas"
 )
 
 # =============================================================================
-# PREDICT
+# PREDICT BUTTON
 # =============================================================================
 if st.button("Predict"):
     if canvas.image_data is not None:
@@ -126,22 +105,23 @@ if st.button("Predict"):
         processed = preprocess(pil)
 
         st.session_state.last_image = processed
+
         probs = predict(processed)
-        pred_idx = np.argmax(probs)
-        pred_char = emnist_map[pred_idx]
+        idx = np.argmax(probs)
+        pred_char = emnist_map[idx]
 
         st.session_state.last_prediction = pred_char
         st.session_state.awaiting_correction = False
 
         st.success(f"Prediction: **{pred_char}**")
     else:
-        st.error("Please draw something first!")
+        st.error("Draw something first!")
+
 
 # =============================================================================
-# CORRECTION (NOT SAVED)
+# CORRECTION BLOCK (NO SAVING)
 # =============================================================================
 if st.session_state.last_prediction:
-
     st.subheader("Was the prediction correct?")
 
     col1, col2 = st.columns(2)
@@ -160,7 +140,7 @@ if st.session_state.last_prediction:
 
         if st.button("Submit Correction"):
             if correct in emnist_map:
-                st.success("Correction noted (not saved).")
+                st.success("Thanks! (Correction not saved)")
                 st.session_state.awaiting_correction = False
             else:
                 st.error("Invalid label.")
@@ -169,4 +149,4 @@ if st.session_state.last_prediction:
 # =============================================================================
 # FOOTER
 # =============================================================================
-st.caption("Model using TensorFlow locally or TFLite in Streamlit Cloud.")
+st.caption("Running entirely on TFLite — works locally & on Streamlit Cloud.")
