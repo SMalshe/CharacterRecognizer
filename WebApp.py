@@ -4,10 +4,19 @@ import streamlit as st
 from PIL import Image, ImageOps
 from streamlit_drawable_canvas import st_canvas
 
-# =============================================================================
-# ENVIRONMENT CHECK
-# =============================================================================
-RUNNING_IN_STREAMLIT_CLOUD = "STREAMLIT_SERVER_URL" in os.environ
+# ============================================================================
+# ENV DETECTION — BULLETPROOF
+# ============================================================================
+
+def running_in_streamlit():
+    """True if running on Streamlit Cloud."""
+    return (
+        "STREAMLIT_SERVER_URL" in os.environ or
+        "STREAMLIT_SHARE" in os.environ or
+        os.environ.get("HOME", "").startswith("/home/adminuser")
+    )
+
+RUNNING_IN_STREAMLIT_CLOUD = running_in_streamlit()
 
 if RUNNING_IN_STREAMLIT_CLOUD:
     import tflite_runtime.interpreter as tflite
