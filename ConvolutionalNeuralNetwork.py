@@ -18,6 +18,17 @@ def load_labels(path):
         _, num = struct.unpack(">II", f.read(8))
         return np.frombuffer(f.read(), dtype=np.uint8)
 
+# For streamlit
+def load_streamlit_corrections(path="data/streamlit_corrections.npy"):
+    if not os.path.exists(path):
+        print("No streamlit corrections found.")
+        return None, None
+
+    images, labels = np.load(path, allow_pickle=True)
+    print(f"Loaded {len(images)} corrected samples from Streamlit.")
+    return np.array(images, dtype=np.float32), np.array(labels, dtype=np.uint8)
+
+
 # Data Loading
 x_train = load_images("gzip/emnist-balanced-train-images-idx3-ubyte.gz")
 y_train = load_labels("gzip/emnist-balanced-train-labels-idx1-ubyte.gz")
@@ -50,6 +61,18 @@ model = tf.keras.models.Sequential([
 
 # Compile Model
 model.compile(optimizer = 'adam', loss = 'sparse_categorical_crossentropy', metrics = ['accuracy'])
+# Load Streamlit corrections (persistent)
+corr_images, corr_labels = load_streamlit_corrections()
+
+if corr_images is not None:
+    corr_images = corr_images.reshape((-1, 28, 28, 1))
+    x_train = np.concatenate([x_train, corr_images], axis=0)
+    y_train = np.concatenate([y_train, corr_labels], axis=0)
+    print(f"Added {len(corr_images)} corrected samples.")
+    print(f"New total training samples: {len(x_train)}")
+else:
+    print("No extra training samples found.")
+
 model.fit(x_train, y_train, epochs = 5)
 
 # Save Model
