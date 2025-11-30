@@ -4,9 +4,7 @@ from PIL import Image, ImageOps
 from streamlit_drawable_canvas import st_canvas
 import tensorflow as tf
 
-# -----------------------------------------------------------------------------
-# LABEL MAP
-# -----------------------------------------------------------------------------
+# Label map
 emnist_map = [
     '0','1','2','3','4','5','6','7','8','9',
     'A','B','C','D','E','F','G','H','I','J',
@@ -15,18 +13,14 @@ emnist_map = [
     'a','b','d','e','f','g','h','n','q','r','t'
 ]
 
-# -----------------------------------------------------------------------------
-# LOAD MODEL
-# -----------------------------------------------------------------------------
+# Load model
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model("handwritten_characters.keras")
 
 model = load_model()
 
-# -----------------------------------------------------------------------------
-# PREPROCESSING FUNCTION
-# -----------------------------------------------------------------------------
+# Center non-center images and preprocess to feed into model
 def preprocess(img):
     img = img.convert("L")
     img = ImageOps.invert(img)
@@ -50,10 +44,8 @@ def preprocess(img):
     final = np.array(canvas) / 255.0
     return final.reshape(1, 28, 28, 1)
 
-# -----------------------------------------------------------------------------
 # UI
-# -----------------------------------------------------------------------------
-st.title("✏️ Handwritten Character Recognizer (Simple Mode)")
+st.title("✏️ Handwritten Character Recognizer")
 
 canvas = st_canvas(
     fill_color="rgba(255,255,255,1)",
@@ -66,9 +58,7 @@ canvas = st_canvas(
     key="canvas"
 )
 
-# -----------------------------------------------------------------------------
-# PREDICT BUTTON
-# -----------------------------------------------------------------------------
+# Predict Button
 if st.button("Predict"):
     if canvas.image_data is not None:
         pil_img = Image.fromarray(canvas.image_data.astype("uint8"))
