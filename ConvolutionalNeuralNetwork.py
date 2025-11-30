@@ -18,17 +18,6 @@ def load_labels(path):
         _, num = struct.unpack(">II", f.read(8))
         return np.frombuffer(f.read(), dtype=np.uint8)
 
-# For streamlit
-def load_streamlit_corrections(path="data/streamlit_corrections.npy"):
-    if not os.path.exists(path):
-        print("No streamlit corrections found.")
-        return None, None
-
-    images, labels = np.load(path, allow_pickle=True)
-    print(f"Loaded {len(images)} corrected samples from Streamlit.")
-    return np.array(images, dtype=np.float32), np.array(labels, dtype=np.uint8)
-
-
 # Data Loading
 x_train = load_images("gzip/emnist-balanced-train-images-idx3-ubyte.gz")
 y_train = load_labels("gzip/emnist-balanced-train-labels-idx1-ubyte.gz")
