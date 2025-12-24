@@ -1,0 +1,28 @@
+# Large dataset files - exclude all except balanced
+gzip/emnist-byclass-*
+gzip/emnist-bymerge-*
+gzip/emnist-digits-*
+gzip/emnist-letters-*
+gzip/emnist-mnist-*
+
+# IDE files
+.DS_Store
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.venv1/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Models (commented out to include in repo)
+# *.keras
+# *.h5
