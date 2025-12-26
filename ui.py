@@ -18,41 +18,36 @@ emnist_map = [
     'a','b','d','e','f','g','h','n','q','r','t'
 ]
 
-# Load model
-@st.cache_resource
-def load_model():
-    return tf.keras.models.load_model("handwritten_cnn.keras")
-
-model = load_model()
+model = tf.keras.models.load_model("handwritten_cnn.keras")
 
 # Center non-center images and preprocess to feed into model
 def preprocess(img):
-    img = img.convert("L")
-    img = ImageOps.invert(img)
+    img = img.convert("L") # Convert to grayscale
+    img = ImageOps.invert(img) # Invert colors
 
-    arr = np.array(img)
-    mask = arr > 20
+    arr = np.array(img) # Convert to numpy array
+    mask = arr > 20 # Find non-white pixels and creates a numpy array that has true in all the places with non-empty pixels
 
-    coords = np.column_stack(np.where(mask))
-    if coords.size == 0:
+    coords = np.column_stack(np.where(mask)) # Combines row and column indices to make a list of coordinates where there are non-empty pixels, lets something like image1 edge case work
+    if coords.size == 0: # Empty drawing
         return np.zeros((1, 28, 28, 1), dtype=np.float32)
 
-    y0, x0 = coords.min(axis=0)
-    y1, x1 = coords.max(axis=0)
+    y0, x0 = coords.min(axis=0) # Get bottom left corner
+    y1, x1 = coords.max(axis=0) # Get top right corner
 
-    cropped = arr[y0:y1 + 1, x0:x1 + 1]
-    cropped = Image.fromarray(cropped).resize((20, 20))
+    cropped = arr[y0:y1 + 1, x0:x1 + 1] # Crop to non-empty pixels
+    cropped = Image.fromarray(cropped).resize((20, 20)) # 20x20 because emnist characters are typically within this size box
 
-    canvas = Image.new("L", (28, 28), 0)
-    canvas.paste(cropped, (4, 4))
+    canvas = Image.new("L", (28, 28), 0) # Make new grayscale 28x28 image with black background
+    canvas.paste(cropped, (4, 4)) # Paste the 20x20 cropped image onto the center of the 28x28 black canvas
 
-    final = np.array(canvas) / 255.0
-    return final.reshape(1, 28, 28, 1)
+    final = np.array(canvas) / 255.0 # Normalize to [0, 1]
+    return final.reshape(1, 28, 28, 1) # Reshape to feed into model
 
 # UI
-st.title("✏️ Handwritten Character Recognizer")
+st.title("Handwritten Character Recognizer")
 
-canvas = st_canvas(
+canvas = st_canvas( # Drawing Canvas
     fill_color="rgba(255,255,255,1)",
     stroke_width=12,
     stroke_color="black",
@@ -65,13 +60,13 @@ canvas = st_canvas(
 
 # Predict Button
 if st.button("Predict"):
-    if canvas.image_data is not None:
+    if canvas.image_data is not None: # Make sure something is drawn
         pil_img = Image.fromarray(canvas.image_data.astype("uint8"))
         processed = preprocess(pil_img)
 
         prediction = model.predict(processed)
-        idx = np.argmax(prediction)
+        idx = np.argmax(prediction) # Get highest probability index
 
-        st.success(f"Prediction: **{emnist_map[idx]}**")
+        st.success(f"Prediction: **{emnist_map[idx]}**") # Translate
     else:
         st.error("Draw something first!")

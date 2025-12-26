@@ -30,9 +30,9 @@ python ui.py
 
 - `ConvolutionalNeuralNetwork.ipynb` - Jupyter notebook with model training
 - `ConvolutionalNeuralNetwork.py` - Python script version
-- `ui.py` - User interface for character recognition
+- `ui.py` - Streamlit-based user interface for character recognition
 - `handwritten_characters.keras` - Trained model
-- `gzip/` - EMNIST dataset files
+- `gzip/` - EMNIST dataset files(only emnist-balanced files)
 
 ## Requirements
 
@@ -41,5 +41,3 @@ python ui.py
 - OpenCV 4.12.0
 - NumPy 2.2.6
 - Matplotlib 3.10.8
-
-See `requirements.txt` for full list of dependencies.
